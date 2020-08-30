@@ -18,6 +18,7 @@ external interface CogentMainState: RState {
     var characterList : MutableList<Character>
     var selectedCharacter: Character?
     var rollResult : Boolean?
+    var diceAmount : Int
 }
 
 external interface DiceIndicatorProps : RProps {
@@ -28,17 +29,11 @@ val diceIndicator = functionalComponent<DiceIndicatorProps> { props ->
     p { props.success }
 }
 
-class DiceIndicator : RComponent<RProps, RState>() {
-    override fun RBuilder.render() {
-        TODO("Not yet implemented")
-    }
-}
-
-
 class CogentMain : RComponent<CogentMainProps, CogentMainState>() {
 
     override fun CogentMainState.init() {
         characterList = (1..5).map { Character.randomCharacter() }.toMutableList()
+        diceAmount = 0
     }
 
     override fun RBuilder.render() {
@@ -51,12 +46,15 @@ class CogentMain : RComponent<CogentMainProps, CogentMainState>() {
             }
             div {
                 h2 { +"Dice Roller" }
-                diceRoller {
-                    rollResult = state.rollResult
-                    onRollHandler = { roll ->
-                        setState {
-                            rollResult = roll
-                            console.log(rollResult)
+                child(DiceRoller::class) {
+                    attrs {
+                        rollResult = state.rollResult
+                        startingChallengeLevel = 0
+                        startingDices = state.diceAmount
+                        onRollHandler = { roll ->
+                            setState {
+                                rollResult = roll
+                            }
                         }
                     }
                 }
@@ -78,7 +76,10 @@ class CogentMain : RComponent<CogentMainProps, CogentMainState>() {
                             }
                         }
                         onDiceCheckSelected = { d ->
-                            (document.getElementById("diceInput") as HTMLInputElement).value = d.toString()
+                            setState {
+                                diceAmount = d
+                                console.log("Actualizado el dice amount a $diceAmount")
+                            }
                         }
                         onAddCharacter = {
                             setState {
@@ -91,4 +92,3 @@ class CogentMain : RComponent<CogentMainProps, CogentMainState>() {
         }
     }
 }
-

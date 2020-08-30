@@ -1,70 +1,78 @@
 package game
 
-import kotlinx.css.Color
-import kotlinx.css.Display
-import kotlinx.css.color
-import kotlinx.css.display
-import kotlinx.html.InputType
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
+import kotlinx.css.*
 import kotlinx.html.js.onClickFunction
-import org.w3c.dom.HTMLInputElement
 import react.*
-import react.dom.button
-import react.dom.input
+import react.dom.div
 import react.dom.p
-import styled.StyledComponents.css
 import styled.css
-import styled.styledB
 import styled.styledButton
 import styled.styledDiv
-import kotlin.browser.document
 import kotlin.random.Random
 
 external interface DiceRollerProps : RProps {
     var onRollHandler : (Boolean) -> Unit
     var rollResult : Boolean?
+    var startingChallengeLevel : Int?
+    var startingDices : Int?
 }
 
-/*external interface DiceRollerState : RState {
-}*/
+external interface DiceRollerState : RState {
+    var challengeLevel : Int
+    var dices : Int
+}
 
-fun RBuilder.diceRoller(handler : DiceRollerProps.() -> Unit) : ReactElement {
-    return child(DiceRoller::class) {
-        this.attrs(handler)
+class DiceRoller : RComponent<DiceRollerProps, DiceRollerState>() {
+
+    override fun DiceRollerState.init() {
+        console.log("Redibujado el dice roller")
+        challengeLevel = 0
+        dices = 0
     }
-}
 
-class DiceRoller : RComponent<DiceRollerProps, RState>() {
+    override fun DiceRollerState.init(props: DiceRollerProps) {
+        console.log("Redibujado el dice roller: ${props.startingDices}")
+        challengeLevel = props.startingChallengeLevel?:0
+        dices = props.startingDices?:0
+    }
 
     override fun RBuilder.render() {
         styledDiv {
-            css { display = Display.flex }
-            p {
-                +"Challenge Level"
-                input(type = InputType.number) {
-                    attrs {
-                        id = "challengeLevelInput"
-                        /*onChangeFunction = {
-                            challengeLevel = (it.target as HTMLInputElement).value.toInt()
-                        }*/
-                    }
+            css {
+                display = Display.flex
+                children("div p") {
+                    textAlign = TextAlign.center
                 }
-                child(Keypad::class) {
-                    attrs.onKeyHit = {
-                        (document.getElementById("challengeLevelInput") as HTMLInputElement).value = it.toString()
+            }
+            div {
+                p {+"Challenge Level"}
+                div {
+                    child(Keypad::class) {
+                        attrs {
+                            key = "challengeLevel"
+                            startingValue = props.startingChallengeLevel
+                            onValueChange = {
+                                setState {
+                                    challengeLevel = it ?: 0
+                                }
+                            }
+                        }
                     }
                 }
             }
-            p {
-                +"Dices"
-                input(type = InputType.number) {
-                    //+props.dices.toString()
-                    attrs {
-                        id = "diceInput"
-                        /*onChangeFunction = {
-                            dices = (it.target as HTMLInputElement).value.toInt()
-                        }*/
+            div {
+                p{+"Dices"}
+                div {
+                    child(Keypad::class) {
+                        attrs {
+                            key = "dices"
+                            startingValue = props.startingDices
+                            onValueChange = {
+                                setState {
+                                    dices = it ?: 0
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -78,8 +86,8 @@ class DiceRoller : RComponent<DiceRollerProps, RState>() {
             }
             attrs {
                 onClickFunction = {
-                    val diceN = (document.getElementById("diceInput") as HTMLInputElement).value.toInt()
-                    val challengeLevel = (document.getElementById("challengeLevelInput") as HTMLInputElement).value.toInt()
+                    val diceN = state.dices
+                    val challengeLevel = state.challengeLevel
                     val roll = challenge(
                             challengeLevel,
                             diceN
@@ -91,7 +99,6 @@ class DiceRoller : RComponent<DiceRollerProps, RState>() {
         }
         p {
             key="Result Indicator"
-            console.log(props.rollResult)
             when (props.rollResult) {
                 true -> +"SUCCESS!"
                 false -> +"FAIL!"
@@ -106,4 +113,10 @@ class DiceRoller : RComponent<DiceRollerProps, RState>() {
     }
 
     fun challenge(cl: Int, diceN : Int) : Boolean = diceRoll(diceN) >= cl
+}
+
+fun RBuilder.diceRoller(handler : DiceRollerProps.() -> Unit) : ReactElement {
+    return child(DiceRoller::class) {
+        this.attrs(handler)
+    }
 }

@@ -5,15 +5,15 @@ import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.css.CSSMarginRule
 import react.*
-import react.dom.button
-import react.dom.div
-import styled.*
-import kotlin.browser.document
+import styled.css
+import styled.styledButton
+import styled.styledDiv
+import styled.styledInput
 
 external interface KeypadProps : RProps {
-    var onKeyHit : (Int) -> Unit
+    var onValueChange : ((Int?) -> Unit)?
+    var startingValue : Int?
 }
 
 external interface KeypadState : RState {
@@ -21,8 +21,21 @@ external interface KeypadState : RState {
 }
 
 class Keypad : RComponent<KeypadProps, KeypadState>() {
+    init {
+        console.log("init keypad con propiedades")
+        setState {
+            inputValue = props.startingValue.toString()
+        }
+    }
+
     override fun KeypadState.init() {
+        console.log("init keypad sin propiedades")
         inputValue = ""
+    }
+
+    override fun KeypadState.init(props: KeypadProps) {
+        console.log("init keypad con propiedades")
+        inputValue = props.startingValue.toString()
     }
 
     override fun RBuilder.render() {
@@ -36,19 +49,26 @@ class Keypad : RComponent<KeypadProps, KeypadState>() {
                 css { put("grid-area", "input")}
                 attrs {
                     value = state.inputValue
+                    onChangeFunction = {
+                        console.log("Changed")
+                        val target = it.target as HTMLInputElement
+                        setState {
+                          inputValue = target.value
+                          props.onValueChange?.invoke(inputValue.toInt())
+                        }
+                    }
                 }
             }
-            (0..9).forEach {
+            (0..9).forEach { num ->
                 styledButton {
-                    css { put("grid-area", "b$it") }
-                    +it.toString()
+                    css { put("grid-area", "b$num") }
+                    +num.toString()
                     attrs {
                         onClickFunction = {
-
-                            /*
-                            (it.target as HTMLInputElement).textContent?.let {
-                                props.onKeyHit(it.toInt())
-                            }*/
+                            setState {
+                                inputValue+=num
+                                props.onValueChange?.invoke(inputValue.toInt())
+                            }
                         }
                     }
                 }
@@ -57,7 +77,10 @@ class Keypad : RComponent<KeypadProps, KeypadState>() {
                 css {put("grid-area", "clear")}
                 +"␡"
                 attrs.onClickFunction = {
-
+                    setState {
+                        inputValue = ""
+                        props.onValueChange?.invoke(null)
+                    }
                 }
             }
         }
